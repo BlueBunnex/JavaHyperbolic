@@ -18,29 +18,26 @@ public class PoincareRenderer extends JPanel {
 		super.paintComponent(g);
 		g.translate(this.getWidth() / 2, this.getHeight() / 2);
 		
-		// generate tiles
-		ArrayList<Tile> allTiles = new ArrayList<Tile>();
+		Tile root = new Tile();
+
+		// 7 = 0.3
+		// 8 = 0.4
+		// 9 = 0.48
+		// 10= 0.53
+		// 20= 0.75
+		double s = 0.3;
 		
-		Tile center = new Tile();
 		for (double a = 0; a < Math.PI * 2; a += (Math.PI * 2) / sides) {
-			center.addVertex(0.3 * Math.cos(a), 0.3 * Math.sin(a));
+			root.addVertex(s * Math.cos(a), s * Math.sin(a));
 		}
-		allTiles.add(center);
 		
-		for (int i=0; i<sides; i++) {
-			Tile leaf = center.circleInversionFromEdge(i, g, false);
-			allTiles.add(leaf);
-			
-			allTiles.add(leaf.circleInversionFromEdge((i + 2) % sides, g, true));
-			allTiles.add(leaf.circleInversionFromEdge((i + 3) % sides, g, true));
-			allTiles.add(leaf.circleInversionFromEdge((i + 4) % sides, g, true));
-		}
+		for (int i=0; i<sides; i++)
+			root.circleInversionFromEdge(i, g, false, 2);
 		
 		// render
 		g.setColor(Color.BLACK);
 		
-		for (Tile tile : allTiles)
-			tile.render(g);
+		root.render(g);
 		
 		// draw poincare circle
 		g.setColor(Color.RED);
@@ -51,13 +48,19 @@ public class PoincareRenderer extends JPanel {
 		return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
 	}
 	
+	private static double dist2(double x1, double y1, double x2, double y2) {
+		return Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2);
+	}
+	
 	private class Tile {
 		
 		ArrayList<Double> x, y;
+		ArrayList<Tile> children;
 		
 		Tile() {
 			this.x = new ArrayList<Double>();
 			this.y = new ArrayList<Double>();
+			this.children = new ArrayList<Tile>();
 		}
 		
 		// circle inversion constructor
@@ -69,11 +72,10 @@ public class PoincareRenderer extends JPanel {
 			
 			for (int i=0; i<source.x.size(); i++) {
 				
-				double initDist  = dist(source.x.get(i), source.y.get(i), px, py);
-				double finalDist = pr / initDist;
+				double initDist = dist2(source.x.get(i), source.y.get(i), px, py);
 				
-				x.add(((source.x.get(i) - px) * finalDist / initDist) + px);
-				y.add(((source.y.get(i) - py) * finalDist / initDist) + py);
+				x.add(((source.x.get(i) - px) * pr / initDist) + px);
+				y.add(((source.y.get(i) - py) * pr / initDist) + py);
 			}
 		}
 		
@@ -82,16 +84,20 @@ public class PoincareRenderer extends JPanel {
 			this.y.add(y);
 		}
 		
+		// recursive
 		void render(Graphics g) {
 			
 			for (int i=0; i<x.size(); i++) {
 				g.drawLine(
 						(int) (scale * x.get(i)),
 						(int) (scale * y.get(i)),
-						(int) (scale * x.get((i+1)%x.size())),
-						(int) (scale * y.get((i+1)%x.size()))
+						(int) (scale * x.get((i + 1) % x.size())),
+						(int) (scale * y.get((i + 1) % x.size()))
 					);
 			}
+			
+			for (Tile child : children)
+				child.render(g);
 		}
 		
 		// currently doesn't work (calculations by grease164493)
@@ -123,7 +129,7 @@ public class PoincareRenderer extends JPanel {
 //			return new Tile(this, px, py, radius);
 //		}
 		
-		Tile circleInversionFromEdge(int i, Graphics g, boolean flip) {
+		void circleInversionFromEdge(int i, Graphics g, boolean flip, int depth) {
 			
 			double x1 = this.x.get(i);
 			double y1 = this.y.get(i);
@@ -141,9 +147,11 @@ public class PoincareRenderer extends JPanel {
 				
 				double perpendicularAngle = Math.atan2(y1 - y2, x1 - x2) + Math.PI / 2 + (flip ? Math.PI : 0);
 				
+				double distOff = Math.sqrt(Math.pow(radius, 2) - Math.pow(dist(x1, y1, x2, y2) / 2, 2));
+				
 				// calculate circle with provided distance to the points
-				px = (x1 + x2) / 2 + radius * Math.cos(perpendicularAngle);
-				py = (y1 + y2) / 2 + radius * Math.sin(perpendicularAngle);
+				px = (x1 + x2) / 2 + distOff * Math.cos(perpendicularAngle);
+				py = (y1 + y2) / 2 + distOff * Math.sin(perpendicularAngle);
 				
 				// if this radius isn't close enough to a perpendicular one, increase
 				
@@ -166,7 +174,14 @@ public class PoincareRenderer extends JPanel {
 //					(int) ((radius * 2) * scale)
 //				);
 			
-			return new Tile(this, px, py, radius);
+			Tile child = new Tile(this, px, py, radius);
+			children.add(child);
+			
+			if (depth > 0) {
+				child.circleInversionFromEdge((i + 2) % sides, g, !flip, depth-1);
+				child.circleInversionFromEdge((i + 3) % sides, g, !flip, depth-1);
+				child.circleInversionFromEdge((i + 4) % sides, g, !flip, depth-1);
+			}
 		}
 		
 	}

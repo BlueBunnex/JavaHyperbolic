@@ -11,10 +11,10 @@ public class Window extends JFrame {
 	public Window() {
 		this.setTitle("hyperbolic owo");
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		this.setSize(400, 400);
+		this.setSize(800, 800);
 		this.setLocationRelativeTo(null);
 		
-		this.setContentPane(new PoincareRenderer(7));
+		this.setContentPane(new PoincareRenderer(7, 200.0));
 		
 		this.setVisible(true);
 	}

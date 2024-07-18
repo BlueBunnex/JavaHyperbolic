@@ -1,5 +1,6 @@
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.Polygon;
 import java.util.ArrayList;
 
 import javax.swing.JPanel;
@@ -18,21 +19,20 @@ public class PoincareRenderer extends JPanel {
 		super.paintComponent(g);
 		g.translate(this.getWidth() / 2, this.getHeight() / 2);
 		
-		Tile root = new Tile();
-
 		// 7 = 0.3
 		// 8 = 0.4
 		// 9 = 0.48
 		// 10= 0.53
 		// 20= 0.75
-		double s = 0.3;
 		
+		Tile root = new Tile();
+		double s = 0.3;
 		for (double a = 0; a < Math.PI * 2; a += (Math.PI * 2) / sides) {
 			root.addVertex(s * Math.cos(a), s * Math.sin(a));
 		}
 		
 		for (int i=0; i<sides; i++)
-			root.circleInversionFromEdge(i, g, false, 2);
+			root.circleInversionFromEdge(i, g, false, 3);
 		
 		// render
 		g.setColor(Color.BLACK);
@@ -56,6 +56,7 @@ public class PoincareRenderer extends JPanel {
 		
 		ArrayList<Double> x, y;
 		ArrayList<Tile> children;
+		int depth = -1;
 		
 		Tile() {
 			this.x = new ArrayList<Double>();
@@ -87,14 +88,15 @@ public class PoincareRenderer extends JPanel {
 		// recursive
 		void render(Graphics g) {
 			
-			for (int i=0; i<x.size(); i++) {
-				g.drawLine(
-						(int) (scale * x.get(i)),
-						(int) (scale * y.get(i)),
-						(int) (scale * x.get((i + 1) % x.size())),
-						(int) (scale * y.get((i + 1) % x.size()))
-					);
-			}
+			Polygon poly = new Polygon();
+			
+			for (int i=0; i<x.size(); i++)
+				poly.addPoint((int) (scale * x.get(i)), (int) (scale * y.get(i)));
+			
+			g.setColor(Color.BLACK);
+			g.drawPolygon(poly);
+			g.setColor(Color.getHSBColor(depth * 0.2f, 1, 1));
+			g.fillPolygon(poly);
 			
 			for (Tile child : children)
 				child.render(g);
@@ -130,6 +132,7 @@ public class PoincareRenderer extends JPanel {
 //		}
 		
 		void circleInversionFromEdge(int i, Graphics g, boolean flip, int depth) {
+			this.depth = depth;
 			
 			double x1 = this.x.get(i);
 			double y1 = this.y.get(i);
@@ -157,10 +160,10 @@ public class PoincareRenderer extends JPanel {
 				
 				// got radius through rewriting an equation found here
 				// https://en.wikipedia.org/wiki/Poincaré_disk_model#By_analytic_geometry
-				if (Math.abs(radius - Math.sqrt(px * px + py * py - 1)) < 0.00001) {
+				if (Math.abs(radius - Math.sqrt(px * px + py * py - 1)) < 0.001) {
 					break;
 				} else {
-					radius += 0.000001;
+					radius += 0.0001;
 					
 					if (radius > 3)
 						break;

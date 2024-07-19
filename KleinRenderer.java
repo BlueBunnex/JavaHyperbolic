@@ -34,17 +34,15 @@ public class KleinRenderer extends JPanel implements MouseMotionListener {
 		super.paintComponent(g);
 		g.translate(this.getWidth() / 2, this.getHeight() / 2);
 		
-		// draw poincare circle
+		// draw exterior disk
 		g.setColor(Color.RED);
 		g.drawOval((int) -scale, (int) -scale, (int) scale*2, (int) scale*2);
 		
-		if (Math.sqrt(mouseX * mouseX + mouseY * mouseY) > 0.95)
+		// avoid weird calculations by returning if the mouse is outside of the hyperbolic plane
+		if (Math.sqrt(mouseX * mouseX + mouseY * mouseY) > 0.99)
 			return;
 		
-		// render
-		g.setColor(Color.BLACK);
-		
-		// render a circle using points that are all equidistant to the center
+		// generate a regular shape using points that are all equidistant to the center
 		Polygon poly = new Polygon();
 		
 		double x = mouseX,
@@ -53,13 +51,13 @@ public class KleinRenderer extends JPanel implements MouseMotionListener {
 		
 		g.fillOval((int) (x * scale) - 2, (int) (y * scale) - 2, 5, 5);
 		
-		for (double a=0; a<Math.PI * 2; a += 0.2) {
+		for (double a=0; a<Math.PI * 2; a += Math.PI / 4) {
 			double nx = x;
 			double ny = y;
 			double hr;
 			do {
-				nx += 0.01 * Math.cos(a);
-				ny += 0.01 * Math.sin(a);
+				nx += 0.001 * Math.cos(a + Math.PI / 8);
+				ny += 0.001 * Math.sin(a + Math.PI / 8);
 				hr = hyperbolicDistance(x, y, nx, ny);
 				
 			} while (hr < r);
@@ -67,6 +65,8 @@ public class KleinRenderer extends JPanel implements MouseMotionListener {
 			poly.addPoint((int) (nx * scale), (int) (ny * scale));
 		}
 		
+		// render it!
+		g.setColor(Color.BLACK);
 		g.drawPolygon(poly);
 	}
 
@@ -99,6 +99,7 @@ public class KleinRenderer extends JPanel implements MouseMotionListener {
 		double slope = (qy - py) / (qx - px);
 		
 		// get the two points on the circle that intersect the line that our two points make
+		// (if the two points have the same x value this does NOT work)
 		if (px < qx) {
 			double holdx = px;
 			double holdy = py;

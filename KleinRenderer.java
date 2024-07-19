@@ -32,6 +32,8 @@ public class KleinRenderer extends JPanel implements MouseMotionListener {
 	
 	public void paintComponent(Graphics g) {
 		super.paintComponent(g);
+		
+		// set the center of the canvas to the drawing origin
 		g.translate(this.getWidth() / 2, this.getHeight() / 2);
 		
 		// draw exterior disk
@@ -42,30 +44,30 @@ public class KleinRenderer extends JPanel implements MouseMotionListener {
 		if (Math.sqrt(mouseX * mouseX + mouseY * mouseY) > 0.99)
 			return;
 		
-		// generate a cicle using many points that are all equidistant to the center
+		// generate a circle around the mouse using many points that are all
+		// equidistant to it in hyperbolic space
+		// (we use approximations here because I suck at math)
 		Polygon poly = new Polygon();
 		
-		double x = mouseX,
-			   y = mouseY,
-			   r = 0.5;
+		final double desiredRadius = 0.5;
 		
 		for (double a=0; a<Math.PI * 2; a += 0.1) {
-			double nx = x;
-			double ny = y;
-			double hr;
+			double x = mouseX;
+			double y = mouseY;
+			double r;
 			do {
-				nx += 0.001 * Math.cos(a);
-				ny += 0.001 * Math.sin(a);
-				hr = hyperbolicDistance(x, y, nx, ny);
+				x += 0.001 * Math.cos(a);
+				y += 0.001 * Math.sin(a);
+				r = hyperbolicDistance(mouseX, mouseY, x, y);
 				
-			} while (hr < r);
+			} while (r < desiredRadius);
 			
-			poly.addPoint((int) (nx * scale), (int) (ny * scale));
+			poly.addPoint((int) (x * scale), (int) (y * scale));
 		}
 		
 		// render it!
 		g.setColor(Color.BLACK);
-		g.fillOval((int) (x * scale) - 2, (int) (y * scale) - 2, 5, 5);
+		g.fillOval((int) (mouseX * scale) - 2, (int) (mouseY * scale) - 2, 5, 5);
 		g.drawPolygon(poly);
 	}
 

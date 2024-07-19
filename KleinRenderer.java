@@ -42,22 +42,20 @@ public class KleinRenderer extends JPanel implements MouseMotionListener {
 		if (Math.sqrt(mouseX * mouseX + mouseY * mouseY) > 0.99)
 			return;
 		
-		// generate a regular shape using points that are all equidistant to the center
+		// generate a cicle using many points that are all equidistant to the center
 		Polygon poly = new Polygon();
 		
 		double x = mouseX,
 			   y = mouseY,
 			   r = 0.5;
 		
-		g.fillOval((int) (x * scale) - 2, (int) (y * scale) - 2, 5, 5);
-		
-		for (double a=0; a<Math.PI * 2; a += Math.PI / 4) {
+		for (double a=0; a<Math.PI * 2; a += 0.1) {
 			double nx = x;
 			double ny = y;
 			double hr;
 			do {
-				nx += 0.001 * Math.cos(a + Math.PI / 8);
-				ny += 0.001 * Math.sin(a + Math.PI / 8);
+				nx += 0.001 * Math.cos(a);
+				ny += 0.001 * Math.sin(a);
 				hr = hyperbolicDistance(x, y, nx, ny);
 				
 			} while (hr < r);
@@ -67,6 +65,7 @@ public class KleinRenderer extends JPanel implements MouseMotionListener {
 		
 		// render it!
 		g.setColor(Color.BLACK);
+		g.fillOval((int) (x * scale) - 2, (int) (y * scale) - 2, 5, 5);
 		g.drawPolygon(poly);
 	}
 

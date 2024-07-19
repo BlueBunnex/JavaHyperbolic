@@ -1,5 +1,6 @@
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.Polygon;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
@@ -44,13 +45,15 @@ public class KleinRenderer extends JPanel implements MouseMotionListener {
 		g.setColor(Color.BLACK);
 		
 		// render a circle using points that are all equidistant to the center
+		Polygon poly = new Polygon();
+		
 		double x = mouseX,
 			   y = mouseY,
-			   r = 1;
+			   r = 0.5;
 		
 		g.fillOval((int) (x * scale) - 2, (int) (y * scale) - 2, 5, 5);
 		
-		for (double a=0; a<Math.PI * 2; a += 0.5) {
+		for (double a=0; a<Math.PI * 2; a += 0.2) {
 			double nx = x;
 			double ny = y;
 			double hr;
@@ -61,8 +64,10 @@ public class KleinRenderer extends JPanel implements MouseMotionListener {
 				
 			} while (hr < r);
 			
-			g.fillOval((int) (nx * scale) - 2, (int) (ny * scale) - 2, 5, 5);
+			poly.addPoint((int) (nx * scale), (int) (ny * scale));
 		}
+		
+		g.drawPolygon(poly);
 	}
 
 	public void mouseDragged(MouseEvent e) {
@@ -90,6 +95,10 @@ public class KleinRenderer extends JPanel implements MouseMotionListener {
 	}
 	
 	private double hyperbolicDistance(double px, double py, double qx, double qy) {
+		
+		double slope = (qy - py) / (qx - px);
+		
+		// get the two points on the circle that intersect the line that our two points make
 		if (px < qx) {
 			double holdx = px;
 			double holdy = py;
@@ -99,9 +108,6 @@ public class KleinRenderer extends JPanel implements MouseMotionListener {
 			qy = holdy;
 		}
 		
-		double slope = (qy - py) / (qx - px);
-		
-		// get the two points on the circle that intersect the line that our two points make
 		double C = py - slope * px;
 		double D = 1 + slope * slope;
 		double E = C / D;
@@ -114,10 +120,9 @@ public class KleinRenderer extends JPanel implements MouseMotionListener {
 		
 		// do the math for the distance
 		return Math.log(
-					(euclidianDistance(ax, ay, qx, qy) * euclidianDistance(px, py, bx, by))
-					/
-					(euclidianDistance(ax, ay, px, py) * euclidianDistance(qx, qy, bx, by))
-				) / 2;
+					  (euclidianDistance(ax, ay, qx, qy) * euclidianDistance(px, py, bx, by))
+					/ (euclidianDistance(ax, ay, px, py) * euclidianDistance(qx, qy, bx, by))
+					) / 2;
 	}
 	
 }
